@@ -1,5 +1,5 @@
 """
-App module for local-tts-studio.
+App module for vox-clone-pipeline.
 
 Streamlit UI components and pages.
 """

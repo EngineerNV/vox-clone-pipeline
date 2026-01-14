@@ -70,22 +70,21 @@ class TTSEngine:
         temperature = temperature if temperature is not None else config.tts.temperature
         speed = speed if speed is not None else config.tts.speed
 
-        # Check if model requires speaker reference
-        if "xtts" in self.model_name.lower():
-            if speaker_wav is None:
-                raise ValueError("Speaker reference audio is required for XTTS models")
-
-            # Synthesize with voice cloning
-            audio = self.model.tts(
-                text=text,
-                speaker_wav=str(speaker_wav),
-                language=language,
-                temperature=temperature,
-                speed=speed,
+        # This is a voice cloning app - speaker reference is always required
+        if speaker_wav is None:
+            raise ValueError(
+                "Speaker reference audio is required for voice cloning. "
+                "This application only supports voice cloning synthesis."
             )
-        else:
-            # Synthesize without voice cloning
-            audio = self.model.tts(text=text, language=language, speed=speed)
+
+        # Synthesize with voice cloning
+        audio = self.model.tts(
+            text=text,
+            speaker_wav=str(speaker_wav),
+            language=language,
+            temperature=temperature,
+            speed=speed,
+        )
 
         # Convert to numpy array if needed
         if isinstance(audio, torch.Tensor):

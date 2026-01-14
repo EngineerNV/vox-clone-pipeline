@@ -1,8 +1,10 @@
-"""TTS service orchestrating audio and TTS operations."""
+"""TTS orchestrator coordinating audio processing and TTS operations."""
 
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+import numpy as np
 
 from audio import AudioIOHandler, AudioProcessor
 from core.config import config
@@ -10,11 +12,11 @@ from core.utils import sanitize_filename
 from tts import TTSEngine, VoiceCloner
 
 
-class TTSService:
-    """High-level service for TTS operations."""
+class TTSOrchestrator:
+    """Orchestrates TTS operations, coordinating audio processing and voice cloning."""
 
     def __init__(self) -> None:
-        """Initialize the TTS service."""
+        """Initialize the TTS orchestrator with required components."""
         self.tts_engine = TTSEngine()
         self.voice_cloner = VoiceCloner(self.tts_engine)
         self.audio_io = AudioIOHandler()

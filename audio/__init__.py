@@ -1,5 +1,5 @@
 """
-Audio module for local-tts-studio.
+Audio module for vox-clone-pipeline.
 
 Handles audio file I/O, processing, and cleaning operations.
 """

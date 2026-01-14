@@ -1,4 +1,4 @@
-# 🎙️ Local TTS Studio
+# 🎙️ Vox Clone Pipeline
 
 A clean, modular Streamlit application for local zero-shot text-to-speech (TTS) voice cloning. Optimized for macOS CPU-only execution with a focus on code quality and maintainability.
 
@@ -14,7 +14,7 @@ A clean, modular Streamlit application for local zero-shot text-to-speech (TTS) 
 ## Architecture
 
 ```
-local-tts-studio/
+vox-clone-pipeline/
 ├── audio/              # Audio processing and I/O
 │   ├── __init__.py
 │   ├── io_handler.py   # Audio file loading and saving
@@ -23,9 +23,9 @@ local-tts-studio/
 │   ├── __init__.py
 │   ├── engine.py       # TTS model interface
 │   └── voice_cloner.py # Voice cloning operations
-├── services/           # Business logic orchestration
+├── orchestration/      # Business logic orchestration
 │   ├── __init__.py
-│   └── tts_service.py  # High-level TTS operations
+│   └── tts_orchestrator.py  # Coordinates audio and TTS operations
 ├── app/                # Streamlit UI components
 │   ├── __init__.py
 │   ├── ui_components.py # Reusable UI components

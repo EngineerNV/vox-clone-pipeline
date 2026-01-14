@@ -34,7 +34,7 @@ class TTSConfig:
 class AppConfig:
     """Configuration for the Streamlit application."""
 
-    title: str = "Local TTS Studio"
+    title: str = "Vox Clone Pipeline"
     page_icon: str = "🎙️"
     layout: str = "wide"
     max_file_size_mb: int = 25

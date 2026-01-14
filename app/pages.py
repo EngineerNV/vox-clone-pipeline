@@ -4,7 +4,7 @@
 import streamlit as st
 
 from app.ui_components import UIComponents
-from services import TTSService
+from orchestration import TTSOrchestrator
 
 
 class MainPage:
@@ -13,7 +13,7 @@ class MainPage:
     def __init__(self) -> None:
         """Initialize the main page."""
         self.ui = UIComponents()
-        self.tts_service = TTSService()
+        self.orchestrator = TTSOrchestrator()
 
     def render(self) -> None:
         """Render the main page."""
@@ -43,7 +43,7 @@ class MainPage:
         if reference_audio:
             # Display reference audio info
             try:
-                audio_info = self.tts_service.get_audio_info(reference_audio)
+                audio_info = self.orchestrator.get_audio_info(reference_audio)
                 self.ui.render_audio_info(audio_info)
 
                 # Play reference audio
@@ -84,7 +84,7 @@ class MainPage:
                 with st.spinner("Generating speech... This may take a minute."):
                     try:
                         # Generate speech
-                        output_path = self.tts_service.process_and_clone(
+                        output_path = self.orchestrator.process_and_clone(
                             text=text,
                             reference_audio_path=reference_audio,
                             language=settings["language"],
@@ -128,7 +128,7 @@ class MainPage:
         if audio_to_clean:
             # Display original audio info
             try:
-                audio_info = self.tts_service.get_audio_info(audio_to_clean)
+                audio_info = self.orchestrator.get_audio_info(audio_to_clean)
 
                 st.markdown("**Original Audio:**")
                 self.ui.render_audio_player(audio_to_clean, "Original audio")
@@ -152,7 +152,7 @@ class MainPage:
                 with st.spinner("Cleaning audio..."):
                     try:
                         # Clean audio
-                        cleaned_path = self.tts_service.clean_audio_file(
+                        cleaned_path = self.orchestrator.clean_audio_file(
                             input_path=audio_to_clean,
                             reduce_noise=cleaning_settings["reduce_noise"],
                             normalize=cleaning_settings["normalize"],

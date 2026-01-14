@@ -1,5 +1,5 @@
 [project]
-name = "local-tts-studio"
+name = "vox-clone-pipeline"
 version = "0.1.0"
 description = "A clean, modular Streamlit app for local zero-shot TTS voice cloning (macOS CPU-only)"
 authors = [

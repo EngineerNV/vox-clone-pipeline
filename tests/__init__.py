@@ -1,1 +1,1 @@
-"""Tests package for local-tts-studio."""
+"""Tests package for vox-clone-pipeline."""

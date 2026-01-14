@@ -1,5 +1,5 @@
 """
-TTS module for local-tts-studio.
+TTS module for vox-clone-pipeline.
 
 Provides text-to-speech and voice cloning functionality.
 """

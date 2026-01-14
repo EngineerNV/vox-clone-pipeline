@@ -1,5 +1,5 @@
 """
-Local TTS Studio - Main Application Entry Point
+Vox Clone Pipeline - Main Application Entry Point
 
 A clean, modular Streamlit app for local zero-shot TTS voice cloning.
 Optimized for macOS CPU-only execution.
@@ -36,7 +36,7 @@ def main() -> None:
         """
         <div style='text-align: center; color: gray; padding: 20px;'>
             <small>
-                Local TTS Studio v0.1.0 |
+                Vox Clone Pipeline v0.1.0 |
                 Powered by Coqui TTS |
                 CPU-only for macOS
             </small>

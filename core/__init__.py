@@ -1,5 +1,5 @@
 """
-Core module for local-tts-studio.
+Core module for vox-clone-pipeline.
 
 Provides configuration, constants, and shared utilities.
 """
