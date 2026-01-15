@@ -1,15 +1,19 @@
 # Core TTS and ML dependencies
 streamlit>=1.31.0
-torch>=2.1.0
-TTS>=0.22.0
-numpy>=1.24.0,<2.0.0
-scipy>=1.11.0
+torch>=2.2.0
+torchaudio>=2.2.0
+torchcodec>=0.9.0  # Required by torchaudio 2.9+ for audio loading
+coqui-tts>=0.25.0  # Maintained fork of Coqui TTS with transformers 4.57+ compatibility
+# Note: coqui-tts requires transformers>=4.57, no need to pin separately
+numpy>=1.26.0,<2.4  # Upper bound required for numba 0.63.x compatibility
+scipy>=1.13.0
 
 # Audio processing
 soundfile>=0.12.0
 noisereduce>=3.0.0
 pydub>=0.25.0
-librosa>=0.10.0
+librosa>=0.11.0
+numba>=0.60.0  # Required by librosa; numba 0.63.x needs numpy<2.4
 
 # Development and testing
 pytest>=8.0.0
@@ -19,3 +23,6 @@ mypy>=1.8.0
 
 # Additional utilities
 python-dotenv>=1.0.0
+
+# Note: After installing, if you see numpy dtype errors, run:
+# pip install "numpy>=1.26.0,<2.4" && pip install --force-reinstall --no-deps pandas

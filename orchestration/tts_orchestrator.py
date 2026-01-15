@@ -4,8 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
-
 from audio import AudioIOHandler, AudioProcessor
 from core.config import config
 from core.utils import sanitize_filename

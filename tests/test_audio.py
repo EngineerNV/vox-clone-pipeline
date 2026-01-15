@@ -52,8 +52,9 @@ class TestAudioProcessor:
 
     def test_normalize_audio(self):
         """Test audio normalization."""
-        # Create audio with known amplitude
-        audio_data = np.ones(1000, dtype=np.float32) * 0.1
+        # Create audio with known amplitude (lower than target -20dB)
+        # 0.05 is approx -26dB
+        audio_data = np.ones(1000, dtype=np.float32) * 0.05
 
         normalized = AudioProcessor.normalize_audio(audio_data)
 
@@ -92,17 +93,21 @@ class TestAudioProcessor:
 
     def test_trim_silence(self):
         """Test silence trimming."""
-        # Create audio with silence at start and end
-        silence = np.zeros(1000, dtype=np.float32)
+        # Need silence longer than min_silence_duration (0.1s = 2205 samples at 22050Hz)
+        sample_rate = 22050
+        silence_len = 5000  # ~0.22s
+        silence = np.zeros(silence_len, dtype=np.float32)
         sound = np.ones(1000, dtype=np.float32) * 0.5
         audio_data = np.concatenate([silence, sound, silence])
 
-        trimmed = AudioProcessor.trim_silence(audio_data, 22050)
+        trimmed = AudioProcessor.trim_silence(audio_data, sample_rate)
 
         # Trimmed audio should be shorter
         assert len(trimmed) < len(audio_data)
         # Should be approximately the length of the sound portion
-        assert len(trimmed) <= len(sound) * 1.5  # Allow some margin
+        # The algorithm moves in frame steps, so it retains full frames
+        assert len(trimmed) < len(audio_data) - 4000
+        assert len(trimmed) <= len(sound) + 2205 * 2  # Allow surrounding frames margin
 
     def test_clean_audio(self):
         """Test full audio cleaning pipeline."""
