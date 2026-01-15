@@ -81,35 +81,50 @@ class MainPage:
                     st.error("Please enter some text to synthesize.")
                     return
 
-                with st.spinner("Generating speech... This may take a minute."):
-                    try:
-                        # Generate speech
-                        output_path = self.orchestrator.process_and_clone(
-                            text=text,
-                            reference_audio_path=reference_audio,
-                            language=settings["language"],
-                            temperature=settings["temperature"],
-                            speed=settings["speed"],
-                            clean_reference=settings["clean_reference"],
-                        )
+                # Show Ditto loading animation
+                loading_placeholder = st.empty()
+                loading_placeholder.markdown(
+                    """
+                    <div class="ditto-container">
+                        <div class="ditto"></div>
+                        <div class="loading-text">◈ Transforming your voice... ◈</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                
+                try:
+                    # Generate speech
+                    output_path = self.orchestrator.process_and_clone(
+                        text=text,
+                        reference_audio_path=reference_audio,
+                        language=settings["language"],
+                        temperature=settings["temperature"],
+                        speed=settings["speed"],
+                        clean_reference=False,
+                    )
+                    
+                    # Clear loading animation
+                    loading_placeholder.empty()
 
-                        # Display success message
-                        st.success("✅ Speech generated successfully!")
+                    # Display success message
+                    st.success("✅ Speech generated successfully!")
 
-                        # Play generated audio
-                        st.markdown("**Generated Audio:**")
-                        self.ui.render_audio_player(output_path, "Generated speech")
+                    # Play generated audio
+                    st.markdown("**Generated Audio:**")
+                    self.ui.render_audio_player(output_path, "Generated speech")
 
-                        # Download button
-                        self.ui.render_download_button(
-                            output_path,
-                            label="📥 Download Generated Audio",
-                            key="download_generated",
-                        )
+                    # Download button
+                    self.ui.render_download_button(
+                        output_path,
+                        label="📥 Download Generated Audio",
+                        key="download_generated",
+                    )
 
-                    except Exception as e:
-                        st.error(f"Error generating speech: {str(e)}")
-                        st.exception(e)
+                except Exception as e:
+                    loading_placeholder.empty()
+                    st.error(f"Error generating speech: {str(e)}")
+                    st.exception(e)
 
         else:
             st.info("👆 Please upload a reference audio file to get started.")
@@ -149,33 +164,48 @@ class MainPage:
             # Clean button
             st.subheader("3. Clean Audio")
             if st.button("🧹 Clean Audio", type="primary", use_container_width=True):
-                with st.spinner("Cleaning audio..."):
-                    try:
-                        # Clean audio
-                        cleaned_path = self.orchestrator.clean_audio_file(
-                            input_path=audio_to_clean,
-                            reduce_noise=cleaning_settings["reduce_noise"],
-                            normalize=cleaning_settings["normalize"],
-                            trim_silence=cleaning_settings["trim_silence"],
-                        )
+                # Show Ditto loading animation
+                loading_placeholder = st.empty()
+                loading_placeholder.markdown(
+                    """
+                    <div class="ditto-container">
+                        <div class="ditto"></div>
+                        <div class="loading-text">◈ Cleaning your audio... ◈</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                
+                try:
+                    # Clean audio
+                    cleaned_path = self.orchestrator.clean_audio_file(
+                        input_path=audio_to_clean,
+                        reduce_noise=cleaning_settings["reduce_noise"],
+                        normalize=cleaning_settings["normalize"],
+                        trim_silence=cleaning_settings["trim_silence"],
+                    )
+                    
+                    # Clear loading animation
+                    loading_placeholder.empty()
 
-                        # Display success message
-                        st.success("✅ Audio cleaned successfully!")
+                    # Display success message
+                    st.success("✅ Audio cleaned successfully!")
 
-                        # Play cleaned audio
-                        st.markdown("**Cleaned Audio:**")
-                        self.ui.render_audio_player(cleaned_path, "Cleaned audio")
+                    # Play cleaned audio
+                    st.markdown("**Cleaned Audio:**")
+                    self.ui.render_audio_player(cleaned_path, "Cleaned audio")
 
-                        # Download button
-                        self.ui.render_download_button(
-                            cleaned_path,
-                            label="📥 Download Cleaned Audio",
-                            key="download_cleaned",
-                        )
+                    # Download button
+                    self.ui.render_download_button(
+                        cleaned_path,
+                        label="📥 Download Cleaned Audio",
+                        key="download_cleaned",
+                    )
 
-                    except Exception as e:
-                        st.error(f"Error cleaning audio: {str(e)}")
-                        st.exception(e)
+                except Exception as e:
+                    loading_placeholder.empty()
+                    st.error(f"Error cleaning audio: {str(e)}")
+                    st.exception(e)
 
         else:
             st.info("👆 Please upload an audio file to clean.")

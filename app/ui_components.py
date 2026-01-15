@@ -14,15 +14,66 @@ class UIComponents:
 
     @staticmethod
     def render_header() -> None:
-        """Render the application header."""
-        st.title(f"{config.app.page_icon} {config.app.title}")
+        """Render the application header with futuristic styling."""
         st.markdown(
             """
-            Generate natural-sounding speech with voice cloning using local TTS models.
-            Upload a reference audio sample and enter your text to get started.
-            """
+            <div style='text-align: center; padding: 20px 0 30px 0;'>
+                <div style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
+                    <span style='
+                        font-size: 48px;
+                        filter: drop-shadow(0 0 10px rgba(0, 255, 242, 0.4));
+                    '>🎙️</span>
+                    <div style='
+                        font-family: Orbitron, sans-serif;
+                        font-size: 48px;
+                        font-weight: 900;
+                        background: linear-gradient(135deg, #00fff2 0%, #00b4d8 50%, #a886d6 100%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                        text-shadow: none;
+                        letter-spacing: 3px;
+                    '>VOX CLONE PIPELINE</div>
+                </div>
+                <div style='
+                    font-family: Orbitron, sans-serif;
+                    font-size: 12px;
+                    color: #a886d6;
+                    letter-spacing: 4px;
+                    text-shadow: 0 0 10px rgba(168, 134, 214, 0.5);
+                    margin-bottom: 15px;
+                '>
+                    by NICK VAUGHN
+                </div>
+                <div style='
+                    font-family: Exo 2, sans-serif;
+                    font-size: 16px;
+                    color: #b8c5d6;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    line-height: 1.6;
+                '>
+                    Generate natural-sounding speech with voice cloning using local TTS models.<br>
+                    Upload a reference audio sample and enter your text to get started.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
         st.divider()
+
+    @staticmethod
+    def render_ditto_loading(message: str = "Generating voice clone...") -> None:
+        """Render a Ditto-themed loading animation."""
+        st.markdown(
+            f"""
+            <div class="ditto-container">
+                <div class="ditto"></div>
+                <div class="loading-text">◈ {message} ◈</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     @staticmethod
     def render_audio_uploader(
@@ -135,17 +186,10 @@ class UIComponents:
                     help="Speech speed multiplier",
                 )
 
-                clean_reference = st.checkbox(
-                    "Clean Reference Audio",
-                    value=True,
-                    help="Apply noise reduction and normalization to reference audio",
-                )
-
         return {
             "language": language,
             "temperature": temperature,
             "speed": speed,
-            "clean_reference": clean_reference,
         }
 
     @staticmethod

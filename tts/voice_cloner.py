@@ -71,8 +71,8 @@ class VoiceCloner:
                 trim_silence=True,
             )
 
-        # Save the prepared audio to a temporary file
-        prepared_path = config.app.temp_dir / f"prepared_{audio_path.name}"
+        # Save the prepared audio to a temporary file (always WAV for compatibility)
+        prepared_path = config.app.temp_dir / f"prepared_{audio_path.stem}.wav"
         self.audio_io.save_audio(audio_data, prepared_path, sample_rate)
 
         return prepared_path

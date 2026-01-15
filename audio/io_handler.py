@@ -1,13 +1,20 @@
 """Audio I/O operations for loading and saving audio files."""
 
+import shutil
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import soundfile as sf
 from pydub import AudioSegment
+from pydub.exceptions import CouldntDecodeError
 
 from core.config import config
+
+
+def _check_ffmpeg_available() -> bool:
+    """Check if ffmpeg is available in PATH."""
+    return shutil.which("ffmpeg") is not None
 
 
 class AudioIOHandler:
@@ -39,8 +46,20 @@ class AudioIOHandler:
         if suffix in (".wav", ".flac"):
             audio_data, sample_rate = sf.read(str(file_path))
         else:
-            # For other formats, use pydub then convert
-            audio_segment = AudioSegment.from_file(str(file_path))
+            # For M4A, MP3, OGG - use pydub (requires ffmpeg)
+            if not _check_ffmpeg_available():
+                raise RuntimeError(
+                    f"ffmpeg is required to load {suffix} files. "
+                    "Install it with: brew install ffmpeg (macOS) or "
+                    "apt install ffmpeg (Linux)"
+                )
+            try:
+                audio_segment = AudioSegment.from_file(str(file_path))
+            except CouldntDecodeError as e:
+                raise ValueError(
+                    f"Could not decode {suffix} file. Ensure ffmpeg supports "
+                    f"this format and the file is not corrupted: {e}"
+                ) from e
             # Convert to mono if stereo
             if audio_segment.channels > 1:
                 audio_segment = audio_segment.set_channels(1)
