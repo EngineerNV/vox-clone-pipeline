@@ -30,8 +30,13 @@ DARK_THEME_CSS = """
     /* Headers with glow effect */
     h1, h2, h3 {
         font-family: 'Orbitron', sans-serif !important;
-        color: #00fff2 !important;
-        text-shadow: 0 0 10px rgba(0, 255, 242, 0.5), 0 0 20px rgba(0, 255, 242, 0.3);
+        color: #ffffff !important; /* White core for better pop */
+        text-shadow: 
+            0 0 5px #00fff2,
+            0 0 15px rgba(0, 255, 242, 0.8),
+            0 0 30px rgba(0, 255, 242, 0.4);
+        letter-spacing: 1px !important;
+        text-transform: uppercase;
     }
     
     /* Body text - but exclude expander internals */
@@ -43,7 +48,7 @@ DARK_THEME_CSS = """
     /* Only style spans that are NOT inside expanders or file uploaders */
     span:not([data-testid="stExpander"] *):not([data-testid*="stFileUploader"] *) {
         font-family: 'Exo 2', sans-serif !important;
-        color: #b8c5d6 !important;
+        color: #FFFFFF !important;
     }
     
     /* Tabs styling */
@@ -101,19 +106,72 @@ DARK_THEME_CSS = """
         box-shadow: 0 0 15px rgba(255, 0, 110, 0.4);
     }
     
-    /* Text inputs and areas */
-    .stTextInput > div > div > input, .stTextArea > div > div > textarea {
-        background: rgba(0, 0, 0, 0.4) !important;
+    /* Text inputs and areas - Updated selectors for reliability */
+    [data-testid="stTextInput"] input,
+    [data-testid="stTextArea"] textarea {
+        background-color: rgba(0, 0, 0, 0.9) !important; /* Darker background */
+        border: 1px solid #00fff2 !important;
+        border-radius: 10px !important;
+        color: #00fff2 !important; /* Neon text */
+        font-family: 'Exo 2', sans-serif !important;
+        caret-color: #00fff2 !important;
+    }
+    
+    [data-testid="stTextInput"] input:focus,
+    [data-testid="stTextArea"] textarea:focus {
+        box-shadow: 0 0 15px rgba(0, 255, 242, 0.3) !important;
+        border-color: #00fff2 !important;
+    }
+    
+    /* Placeholder styling */
+    [data-testid="stTextArea"] textarea::placeholder,
+    [data-testid="stTextInput"] input::placeholder {
+        color: rgba(0, 255, 242, 0.5) !important;
+    }
+    
+    /* Selectbox styling to match inputs */
+    [data-testid="stSelectbox"] > div > div {
+        background-color: rgba(0, 0, 0, 0.4) !important;
         border: 1px solid #00fff2 !important;
         border-radius: 10px !important;
         color: #e0e0e0 !important;
         font-family: 'Exo 2', sans-serif !important;
     }
     
-    .stTextInput > div > div > input:focus, .stTextArea > div > div > textarea:focus {
-        box-shadow: 0 0 15px rgba(0, 255, 242, 0.3) !important;
+    /* Remove default internal borders in selectbox */
+    [data-testid="stSelectbox"] [data-baseweb="select"] {
+        background-color: transparent !important;
+        border: none !important;
+        color: #e0e0e0 !important; 
     }
     
+    /* Icons in selectbox */
+    [data-testid="stSelectbox"] svg {
+        fill: #00fff2 !important;
+    }
+    
+    /* Selected value text */
+    [data-testid="stSelectbox"] [data-testid="stMarkdownContainer"] p {
+        color: #00fff2 !important;
+        font-family: 'Exo 2', sans-serif !important;
+    }
+
+    /* Dropdown menu styling */
+    [data-baseweb="popover"], [data-baseweb="menu"] {
+        background-color: #1a1a2e !important;
+        border: 1px solid #00fff2 !important;
+    }
+    
+    [role="option"] {
+        background-color: #1a1a2e !important;
+        color: #b8c5d6 !important;
+    }
+    
+    [role="option"]:hover, [role="option"][aria-selected="true"] {
+        background-color: rgba(0, 255, 242, 0.2) !important;
+        color: #00fff2 !important;
+    }
+
     /* File uploader */
     [data-testid="stFileUploader"] {
         background: rgba(0, 0, 0, 0.3) !important;
@@ -157,9 +215,28 @@ DARK_THEME_CSS = """
         opacity: 0.8;
     }
     
+    /* Delete (X) button styling */
     [data-testid="stFileUploader"] button {
+        border: none !important;
+        background: transparent !important;
+    }
+
+    /* Force the X icon to be cyan */
+    [data-testid="stFileUploader"] button svg {
+        fill: #00fff2 !important;
         color: #00fff2 !important;
-        border-color: #00fff2 !important;
+    }
+
+    /* Turn red on hover for danger indication */
+    [data-testid="stFileUploader"] button:hover {
+        border-color: transparent !important;
+        background-color: transparent !important;
+        color: #ff006e !important;
+    }
+
+    [data-testid="stFileUploader"] button:hover svg {
+        fill: #ff006e !important;
+        color: #ff006e !important;
     }
     
     /* Expanders - comprehensive fix for arrow text leak */
