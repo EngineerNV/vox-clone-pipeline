@@ -2,7 +2,7 @@
 Vox Clone Pipeline - Main Application Entry Point
 
 A clean, modular Streamlit app for local zero-shot TTS voice cloning.
-Optimized for macOS CPU-only execution.
+Runs on Apple Silicon GPU (MPS), CUDA, or CPU.
 """
 
 import streamlit as st
@@ -505,7 +505,7 @@ def main() -> None:
                 color: #666;
                 letter-spacing: 1px;
             '>
-                Powered by Coqui TTS | CPU-only for macOS
+                Powered by Chatterbox TTS | Apple Silicon GPU + CPU
             </div>
             <div style='
                 margin-top: 15px;

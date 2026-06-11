@@ -1,13 +1,13 @@
 # 🎙️ Vox Clone Pipeline
 
-A clean, modular Streamlit application for local zero-shot text-to-speech (TTS) voice cloning. Optimized for macOS CPU-only execution with a focus on code quality and maintainability.
+A clean, modular Streamlit application for local zero-shot text-to-speech (TTS) voice cloning. Runs locally on Apple Silicon GPU (MPS), CUDA, or CPU, with a focus on code quality and maintainability.
 
 ## Features
 
 - 🎯 **Zero-Shot Voice Cloning**: Clone any voice from a short audio sample
 - 🧹 **Audio Cleaning**: Noise reduction, normalization, and silence trimming
 - 🎵 **Text-to-Speech**: Generate natural-sounding speech in multiple languages
-- 💻 **CPU-Only**: Runs on macOS without GPU requirements
+- 💻 **Runs Locally**: Uses the Apple Silicon GPU automatically; no dedicated GPU required
 - 🏗️ **Clean Architecture**: Modular OOP design with separation of concerns
 - 🎨 **User-Friendly UI**: Intuitive Streamlit interface
 
@@ -189,7 +189,7 @@ mypy .
 
 ## Performance
 
-- **CPU-Only**: No GPU required (optimized for M1/M2 Macs)
+- **Local Inference**: Apple Silicon GPU (MPS) used automatically; CPU fallback available
 - **Generation Time**: ~10-30 seconds for short text on modern hardware
 - **Memory Usage**: ~2-4GB RAM during generation
 
@@ -199,7 +199,7 @@ mypy .
 
 **"Model not found" error**:
 - Ensure you have an active internet connection on first run
-- The XTTS v2 model (~2GB) will be downloaded automatically
+- The Chatterbox model (~2GB) will be downloaded automatically
 
 **"Audio duration invalid" warning**:
 - Reference audio should be 0.5-30 seconds
@@ -211,7 +211,7 @@ mypy .
 
 **Import errors**:
 - Ensure all dependencies are installed: `pip install -r requirements.txt`
-- Check Python version compatibility (3.9-3.12)
+- Check Python version compatibility (3.10-3.12)
 
 ## Contributing
 
@@ -229,7 +229,8 @@ MIT License - see LICENSE file for details
 
 ## Acknowledgments
 
-- [Coqui TTS](https://github.com/coqui-ai/TTS) - TTS models and engine
+- [Chatterbox (Resemble AI)](https://github.com/resemble-ai/chatterbox) - Default TTS engine
+- [Coqui TTS](https://github.com/coqui-ai/TTS) - Legacy XTTS engine
 - [Streamlit](https://streamlit.io/) - Web application framework
 - Community contributors and testers
 
@@ -241,4 +242,4 @@ For issues, questions, or suggestions:
 
 ---
 
-**Note**: This is a local, CPU-only application. No data is sent to external servers. All processing happens on your machine.
+**Note**: This is a fully local application. No data is sent to external servers. All processing happens on your machine.

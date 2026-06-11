@@ -101,7 +101,7 @@ class BaseTTSEngine(ABC):
             )
 
     @staticmethod
-    def _apply_speed(audio: np.ndarray, sample_rate: int, speed: float) -> np.ndarray:
+    def _apply_speed(audio: np.ndarray, speed: float) -> np.ndarray:
         """Time-stretch audio for engines without a native speed control."""
         if abs(speed - 1.0) < 1e-3:
             return audio
@@ -188,7 +188,7 @@ class ChatterboxEngine(BaseTTSEngine):
         )
 
         audio = wav.squeeze(0).detach().cpu().numpy().astype(np.float32)
-        audio = self._apply_speed(audio, self.model.sr, speed)
+        audio = self._apply_speed(audio, speed)
         return audio, self.model.sr
 
     def get_available_languages(self) -> list[str]:

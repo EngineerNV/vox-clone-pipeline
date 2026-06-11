@@ -7,13 +7,20 @@ from app.ui_components import UIComponents
 from orchestration import TTSOrchestrator
 
 
+@st.cache_resource
+def _get_orchestrator() -> TTSOrchestrator:
+    """Build the orchestrator once per process so the loaded TTS model
+    survives Streamlit reruns instead of being reloaded on every interaction."""
+    return TTSOrchestrator()
+
+
 class MainPage:
     """Main page of the TTS Studio application."""
 
     def __init__(self) -> None:
         """Initialize the main page."""
         self.ui = UIComponents()
-        self.orchestrator = TTSOrchestrator()
+        self.orchestrator = _get_orchestrator()
 
     def render(self) -> None:
         """Render the main page."""
