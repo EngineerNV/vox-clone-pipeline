@@ -98,10 +98,8 @@ class MainPage:
                     output_path = self.orchestrator.process_and_clone(
                         text=text,
                         reference_audio_path=reference_audio,
-                        language=settings["language"],
-                        temperature=settings["temperature"],
-                        speed=settings["speed"],
                         clean_reference=False,
+                        **settings,
                     )
                     
                     # Clear loading animation

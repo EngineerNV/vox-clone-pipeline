@@ -21,7 +21,9 @@ class TestConfig:
         """Test TTSConfig default values."""
         config = TTSConfig()
         assert config.language == "en"
-        assert config.use_cpu is True
+        assert config.engine == "chatterbox"
+        assert config.chatterbox_variant == "turbo"
+        assert config.device == "auto"
         assert 0 < config.temperature <= 1.0
 
     def test_app_config_creates_directories(self, tmp_path):

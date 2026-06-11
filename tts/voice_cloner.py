@@ -7,20 +7,20 @@ import numpy as np
 
 from audio import AudioIOHandler, AudioProcessor
 from core.config import config
-from tts.engine import TTSEngine
+from tts.engine import BaseTTSEngine, create_engine
 
 
 class VoiceCloner:
     """Handles voice cloning operations."""
 
-    def __init__(self, tts_engine: Optional[TTSEngine] = None) -> None:
+    def __init__(self, tts_engine: Optional[BaseTTSEngine] = None) -> None:
         """
         Initialize the voice cloner.
 
         Args:
-            tts_engine: TTS engine instance (creates new one if not provided)
+            tts_engine: TTS engine instance (creates the configured default if not provided)
         """
-        self.tts_engine = tts_engine or TTSEngine()
+        self.tts_engine = tts_engine or create_engine()
         self.audio_io = AudioIOHandler()
         self.audio_processor = AudioProcessor()
 
@@ -28,6 +28,7 @@ class VoiceCloner:
         self,
         audio_path: Path,
         clean: bool = True,
+        target_sample_rate: Optional[int] = None,
     ) -> Path:
         """
         Prepare reference audio for voice cloning.
@@ -35,6 +36,8 @@ class VoiceCloner:
         Args:
             audio_path: Path to the reference audio file
             clean: Whether to apply audio cleaning
+            target_sample_rate: Resample the reference to this rate, or keep
+                the original rate if None
 
         Returns:
             Path to the prepared audio file
@@ -55,10 +58,10 @@ class VoiceCloner:
                 f"{config.audio.max_duration_seconds}s"
             )
 
-        # Resample if needed
-        if sample_rate != config.audio.sample_rate:
+        # Resample only if the engine requires a specific rate
+        if target_sample_rate is not None and sample_rate != target_sample_rate:
             audio_data, sample_rate = self.audio_processor.resample_audio(
-                audio_data, sample_rate
+                audio_data, sample_rate, target_sample_rate
             )
 
         # Apply cleaning if requested
@@ -81,43 +84,40 @@ class VoiceCloner:
         self,
         text: str,
         reference_audio: Path,
-        language: Optional[str] = None,
-        temperature: Optional[float] = None,
-        speed: Optional[float] = None,
         clean_reference: bool = True,
-    ) -> np.ndarray:
+        **synthesis_params: object,
+    ) -> tuple[np.ndarray, int]:
         """
         Clone a voice and synthesize text.
 
         Args:
             text: Text to synthesize
             reference_audio: Path to reference speaker audio
-            language: Language code
-            temperature: Sampling temperature
-            speed: Speech speed multiplier
             clean_reference: Whether to clean the reference audio
+            **synthesis_params: Engine synthesis parameters (language,
+                temperature, speed, exaggeration, cfg_weight, ...)
 
         Returns:
-            Generated audio as numpy array
+            Tuple of (generated audio as numpy array, sample rate in Hz)
 
         Raises:
             ValueError: If inputs are invalid
         """
-        if not self.tts_engine.is_multi_speaker():
+        if not self.tts_engine.supports_voice_cloning():
             raise ValueError(
-                f"Model {self.tts_engine.model_name} does not support voice cloning"
+                f"Engine {type(self.tts_engine).__name__} does not support voice cloning"
             )
 
         # Prepare the reference audio
-        prepared_audio = self.prepare_reference_audio(reference_audio, clean=clean_reference)
-
-        # Synthesize with the cloned voice
-        audio = self.tts_engine.synthesize(
-            text=text,
-            speaker_wav=prepared_audio,
-            language=language,
-            temperature=temperature,
-            speed=speed,
+        prepared_audio = self.prepare_reference_audio(
+            reference_audio,
+            clean=clean_reference,
+            target_sample_rate=self.tts_engine.reference_sample_rate,
         )
 
-        return audio
+        # Synthesize with the cloned voice
+        return self.tts_engine.synthesize(
+            text=text,
+            speaker_wav=prepared_audio,
+            **synthesis_params,
+        )

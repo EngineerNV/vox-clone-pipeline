@@ -5,8 +5,12 @@ set -e
 
 echo "🎙️ Setting up Local TTS Studio..."
 
-# Check Python version
+# Check Python version (chatterbox-tts requires >=3.10)
 python_version=$(python3 --version 2>&1 | awk '{print $2}')
+if ! python3 -c 'import sys; sys.exit(0 if (3, 10) <= sys.version_info < (3, 13) else 1)'; then
+    echo "❌ Python 3.10-3.12 required, found $python_version"
+    exit 1
+fi
 echo "✓ Found Python $python_version"
 
 # Create virtual environment if it doesn't exist

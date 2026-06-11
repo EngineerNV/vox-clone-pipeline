@@ -156,16 +156,24 @@ class UIComponents:
         Returns:
             Dictionary of TTS settings
         """
+        is_chatterbox = config.tts.engine == "chatterbox"
+
         with st.expander("⚙️ Advanced Settings", expanded=False):
             col1, col2 = st.columns(2)
 
             with col1:
-                language = st.selectbox(
-                    "Language",
-                    options=["en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn"],
-                    index=0,
-                    help="Select the language for speech synthesis",
-                )
+                if is_chatterbox:
+                    language = "en"
+                    st.caption(
+                        f"Engine: Chatterbox ({config.tts.chatterbox_variant}) — English only"
+                    )
+                else:
+                    language = st.selectbox(
+                        "Language",
+                        options=["en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn"],
+                        index=0,
+                        help="Select the language for speech synthesis",
+                    )
 
                 temperature = st.slider(
                     "Temperature",
@@ -186,11 +194,35 @@ class UIComponents:
                     help="Speech speed multiplier",
                 )
 
-        return {
-            "language": language,
-            "temperature": temperature,
-            "speed": speed,
-        }
+            settings: dict[str, any] = {
+                "language": language,
+                "temperature": temperature,
+                "speed": speed,
+            }
+
+            # Expressiveness controls exist only on the standard Chatterbox model
+            if is_chatterbox and config.tts.chatterbox_variant == "standard":
+                col3, col4 = st.columns(2)
+                with col3:
+                    settings["exaggeration"] = st.slider(
+                        "Exaggeration",
+                        min_value=0.0,
+                        max_value=1.0,
+                        value=config.tts.exaggeration,
+                        step=0.05,
+                        help="Emotion intensity. 0.5 is neutral; higher is more dramatic",
+                    )
+                with col4:
+                    settings["cfg_weight"] = st.slider(
+                        "CFG Weight",
+                        min_value=0.0,
+                        max_value=1.0,
+                        value=config.tts.cfg_weight,
+                        step=0.05,
+                        help="Adherence to the reference voice. Lower values slow down pacing",
+                    )
+
+        return settings
 
     @staticmethod
     def render_audio_cleaning_settings() -> dict[str, bool]:
