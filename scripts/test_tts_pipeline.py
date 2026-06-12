@@ -17,6 +17,7 @@ Usage:
 """
 
 import argparse
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -46,7 +47,6 @@ def test_imports() -> bool:
     ]
 
     # Only the configured engine's package needs to be importable
-    import os
     engine = os.getenv("TTS_ENGINE", "chatterbox")
     if engine == "xtts":
         modules.append(("TTS.api", "TTS (coqui-tts)"))

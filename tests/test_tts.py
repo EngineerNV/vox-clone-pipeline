@@ -25,6 +25,13 @@ class FakeChatterboxModel:
         return torch.zeros(1, self.sr)  # 1 second of silence
 
 
+def make_engine(variant="turbo"):
+    """ChatterboxEngine with the model swapped for a fake (no download/load)."""
+    engine = ChatterboxEngine(variant=variant, device="cpu")
+    engine._model = FakeChatterboxModel()
+    return engine
+
+
 def _write_wav(path, seconds, sample_rate=24000):
     import soundfile as sf
 
@@ -73,8 +80,7 @@ class TestResolveDevice:
 
 class TestChatterboxEngine:
     def test_synthesize_returns_audio_and_native_sample_rate(self, reference_wav):
-        engine = ChatterboxEngine(variant="turbo", device="cpu")
-        engine._model = FakeChatterboxModel()
+        engine = make_engine()
 
         audio, sample_rate = engine.synthesize("Hello world", speaker_wav=reference_wav)
 
@@ -83,8 +89,7 @@ class TestChatterboxEngine:
         assert audio.ndim == 1
 
     def test_turbo_omits_unsupported_params(self, reference_wav):
-        engine = ChatterboxEngine(variant="turbo", device="cpu")
-        engine._model = FakeChatterboxModel()
+        engine = make_engine()
 
         engine.synthesize("Hi", speaker_wav=reference_wav, exaggeration=0.9, cfg_weight=0.3)
 
@@ -92,8 +97,7 @@ class TestChatterboxEngine:
         assert "cfg_weight" not in engine._model.last_kwargs
 
     def test_standard_passes_expressiveness_params(self, reference_wav):
-        engine = ChatterboxEngine(variant="standard", device="cpu")
-        engine._model = FakeChatterboxModel()
+        engine = make_engine("standard")
 
         engine.synthesize("Hi", speaker_wav=reference_wav, exaggeration=0.9, cfg_weight=0.3)
 
@@ -101,15 +105,13 @@ class TestChatterboxEngine:
         assert engine._model.last_kwargs["cfg_weight"] == 0.3
 
     def test_rejects_non_english_language(self, reference_wav):
-        engine = ChatterboxEngine(variant="turbo", device="cpu")
-        engine._model = FakeChatterboxModel()
+        engine = make_engine()
 
         with pytest.raises(ValueError, match="only supports English"):
             engine.synthesize("Bonjour", speaker_wav=reference_wav, language="fr")
 
     def test_speed_changes_duration(self, reference_wav):
-        engine = ChatterboxEngine(variant="turbo", device="cpu")
-        engine._model = FakeChatterboxModel()
+        engine = make_engine()
 
         audio_normal, _ = engine.synthesize("Hi", speaker_wav=reference_wav, speed=1.0)
         audio_fast, _ = engine.synthesize("Hi", speaker_wav=reference_wav, speed=2.0)
@@ -119,15 +121,13 @@ class TestChatterboxEngine:
     def test_turbo_rejects_short_reference(self, short_reference_wav):
         # Turbo's prepare_conditionals asserts > 5s; we must fail with a clear
         # ValueError before the model loads instead of a raw AssertionError
-        engine = ChatterboxEngine(variant="turbo", device="cpu")
-        engine._model = FakeChatterboxModel()
+        engine = make_engine()
 
         with pytest.raises(ValueError, match="longer than 5 seconds"):
             engine.synthesize("Hi", speaker_wav=short_reference_wav)
 
     def test_standard_accepts_short_reference(self, short_reference_wav):
-        engine = ChatterboxEngine(variant="standard", device="cpu")
-        engine._model = FakeChatterboxModel()
+        engine = make_engine("standard")
 
         audio, sample_rate = engine.synthesize("Hi", speaker_wav=short_reference_wav)
 
@@ -183,6 +183,20 @@ class TestXTTSEngine:
         # Coqui XTTS is unreliable on MPS; it must stay on CPU unless CUDA exists
         engine = XTTSEngine(device="mps")
         assert engine._device == "cpu"
+
+
+class TestPrepareReferenceAudio:
+    def test_unchanged_wav_is_passed_through(self, reference_wav):
+        from tts.voice_cloner import VoiceCloner
+
+        cloner = VoiceCloner(make_engine())
+
+        prepared = cloner.prepare_reference_audio(
+            reference_wav, clean=False, target_sample_rate=None
+        )
+
+        # No cleaning, no resampling: the original file should be used as-is
+        assert prepared == reference_wav
 
 
 class TestOrchestratorSampleRate:

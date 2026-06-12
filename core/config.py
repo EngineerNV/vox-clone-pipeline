@@ -26,8 +26,6 @@ class TTSConfig:
     model_name: str = "tts_models/multilingual/multi-dataset/xtts_v2"  # XTTS engine only
     language: str = "en"
     temperature: float = 0.75
-    top_k: int = 50
-    top_p: float = 0.85
     speed: float = 1.0
     exaggeration: float = 0.5  # Chatterbox standard variant only
     cfg_weight: float = 0.5  # Chatterbox standard variant only

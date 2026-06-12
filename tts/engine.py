@@ -24,6 +24,7 @@ os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 import numpy as np
 import torch
 
+from audio import AudioProcessor
 from core.config import config
 
 
@@ -53,6 +54,10 @@ class BaseTTSEngine(ABC):
     #: Sample rate the reference audio should be resampled to before cloning,
     #: or None to pass the reference at its original rate.
     reference_sample_rate: Optional[int] = None
+
+    #: Minimum reference clip duration the underlying model accepts, in
+    #: seconds (exclusive). 0.0 means no engine-specific floor.
+    min_reference_seconds: float = 0.0
 
     @abstractmethod
     def synthesize(
@@ -90,6 +95,16 @@ class BaseTTSEngine(ABC):
     def supports_voice_cloning(self) -> bool:
         """Return True if the engine can clone a voice from reference audio."""
 
+    @property
+    def display_name(self) -> str:
+        """Human-readable engine name for the UI."""
+        return type(self).__name__
+
+    @property
+    def supports_expressiveness(self) -> bool:
+        """Return True if the engine accepts exaggeration/cfg_weight controls."""
+        return False
+
     @staticmethod
     def _validate_inputs(text: str, speaker_wav: Optional[Path]) -> None:
         if not text.strip():
@@ -101,13 +116,17 @@ class BaseTTSEngine(ABC):
             )
 
     @staticmethod
-    def _apply_speed(audio: np.ndarray, speed: float) -> np.ndarray:
-        """Time-stretch audio for engines without a native speed control."""
-        if abs(speed - 1.0) < 1e-3:
-            return audio
-        import librosa
-
-        return librosa.effects.time_stretch(audio, rate=speed)
+    def _resolve_defaults(
+        language: Optional[str],
+        temperature: Optional[float],
+        speed: Optional[float],
+    ) -> tuple[str, float, float]:
+        """Fill unset synthesis parameters from config."""
+        return (
+            language or config.tts.language,
+            temperature if temperature is not None else config.tts.temperature,
+            speed if speed is not None else config.tts.speed,
+        )
 
 
 class ChatterboxEngine(BaseTTSEngine):
@@ -164,15 +183,15 @@ class ChatterboxEngine(BaseTTSEngine):
         **kwargs: object,
     ) -> tuple[np.ndarray, int]:
         self._validate_inputs(text, speaker_wav)
+        language, temperature, speed = self._resolve_defaults(language, temperature, speed)
 
-        language = language or config.tts.language
         if language not in self.get_available_languages():
             raise ValueError(
                 f"Chatterbox ({self.variant}) only supports English ('en'), "
                 f"got language={language!r}. Use the XTTS engine for other languages."
             )
 
-        if self.min_reference_seconds:
+        if self.min_reference_seconds > 0:
             import soundfile as sf
 
             duration = sf.info(str(speaker_wav)).duration
@@ -184,11 +203,8 @@ class ChatterboxEngine(BaseTTSEngine):
                     f"sample or switch to CHATTERBOX_VARIANT=standard."
                 )
 
-        temperature = temperature if temperature is not None else config.tts.temperature
-        speed = speed if speed is not None else config.tts.speed
-
         generate_kwargs: dict = {"temperature": temperature}
-        if self.variant == "standard":
+        if self.supports_expressiveness:
             generate_kwargs["exaggeration"] = (
                 exaggeration if exaggeration is not None else config.tts.exaggeration
             )
@@ -203,8 +219,16 @@ class ChatterboxEngine(BaseTTSEngine):
         )
 
         audio = wav.squeeze(0).detach().cpu().numpy().astype(np.float32)
-        audio = self._apply_speed(audio, speed)
+        audio = AudioProcessor.change_speed(audio, speed)
         return audio, self.model.sr
+
+    @property
+    def display_name(self) -> str:
+        return f"Chatterbox ({self.variant})"
+
+    @property
+    def supports_expressiveness(self) -> bool:
+        return self.variant == "standard"
 
     def get_available_languages(self) -> list[str]:
         return ["en"]
@@ -261,10 +285,7 @@ class XTTSEngine(BaseTTSEngine):
         **kwargs: object,
     ) -> tuple[np.ndarray, int]:
         self._validate_inputs(text, speaker_wav)
-
-        language = language or config.tts.language
-        temperature = temperature if temperature is not None else config.tts.temperature
-        speed = speed if speed is not None else config.tts.speed
+        language, temperature, speed = self._resolve_defaults(language, temperature, speed)
 
         audio = self.model.tts(
             text=text,
@@ -279,10 +300,17 @@ class XTTSEngine(BaseTTSEngine):
 
         return np.array(audio, dtype=np.float32), self.output_sample_rate
 
+    @property
+    def display_name(self) -> str:
+        return "XTTS v2"
+
     def get_available_languages(self) -> list[str]:
-        if hasattr(self.model, "languages"):
-            return self.model.languages
-        return ["en"]
+        # Static so the UI can query languages without triggering the ~2GB
+        # model load. Matches XTTS v2's documented language support.
+        return [
+            "en", "es", "fr", "de", "it", "pt", "pl", "tr",
+            "ru", "nl", "cs", "ar", "zh-cn",
+        ]
 
     def supports_voice_cloning(self) -> bool:
         return "xtts" in self.model_name.lower() or "vits" in self.model_name.lower()

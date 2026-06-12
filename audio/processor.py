@@ -113,6 +113,24 @@ class AudioProcessor:
         return resampled, target_sr
 
     @staticmethod
+    def change_speed(audio_data: np.ndarray, speed: float) -> np.ndarray:
+        """
+        Change playback speed without altering pitch (time-stretch).
+
+        Args:
+            audio_data: Audio data as numpy array
+            speed: Speed multiplier (>1 is faster/shorter, <1 is slower/longer)
+
+        Returns:
+            Time-stretched audio data
+        """
+        if abs(speed - 1.0) < 1e-3:
+            return audio_data
+        import librosa
+
+        return librosa.effects.time_stretch(audio_data, rate=speed)
+
+    @staticmethod
     def trim_silence(
         audio_data: np.ndarray,
         sample_rate: int,

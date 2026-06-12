@@ -77,7 +77,7 @@ class MainPage:
 
             # Settings
             st.subheader("3. Configure Settings")
-            settings = self.ui.render_tts_settings()
+            settings = self.ui.render_tts_settings(self.orchestrator.tts_engine)
 
             st.divider()
 

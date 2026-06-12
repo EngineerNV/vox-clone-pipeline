@@ -1,12 +1,15 @@
 """UI components for the Streamlit application."""
 
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import streamlit as st
 
 from core.config import config
 from core.utils import format_duration
+
+if TYPE_CHECKING:
+    from tts.engine import BaseTTSEngine
 
 
 class UIComponents:
@@ -149,28 +152,29 @@ class UIComponents:
         )
 
     @staticmethod
-    def render_tts_settings() -> dict[str, any]:
+    def render_tts_settings(engine: "BaseTTSEngine") -> dict[str, str | float]:
         """
-        Render TTS settings controls.
+        Render TTS settings controls for the given engine's capabilities.
+
+        Args:
+            engine: The active TTS engine (drives which controls appear)
 
         Returns:
-            Dictionary of TTS settings
+            Dictionary of TTS settings to pass through to synthesis
         """
-        is_chatterbox = config.tts.engine == "chatterbox"
+        languages = engine.get_available_languages()
 
         with st.expander("⚙️ Advanced Settings", expanded=False):
             col1, col2 = st.columns(2)
 
             with col1:
-                if is_chatterbox:
-                    language = "en"
-                    st.caption(
-                        f"Engine: Chatterbox ({config.tts.chatterbox_variant}) — English only"
-                    )
+                if len(languages) == 1:
+                    language = languages[0]
+                    st.caption(f"Engine: {engine.display_name} — English only")
                 else:
                     language = st.selectbox(
                         "Language",
-                        options=["en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn"],
+                        options=languages,
                         index=0,
                         help="Select the language for speech synthesis",
                     )
@@ -194,14 +198,13 @@ class UIComponents:
                     help="Speech speed multiplier",
                 )
 
-            settings: dict[str, any] = {
+            settings: dict[str, str | float] = {
                 "language": language,
                 "temperature": temperature,
                 "speed": speed,
             }
 
-            # Expressiveness controls exist only on the standard Chatterbox model
-            if is_chatterbox and config.tts.chatterbox_variant == "standard":
+            if engine.supports_expressiveness:
                 col3, col4 = st.columns(2)
                 with col3:
                     settings["exaggeration"] = st.slider(

@@ -58,8 +58,15 @@ class VoiceCloner:
                 f"{config.audio.max_duration_seconds}s"
             )
 
-        # Resample only if the engine requires a specific rate
-        if target_sample_rate is not None and sample_rate != target_sample_rate:
+        needs_resample = target_sample_rate is not None and sample_rate != target_sample_rate
+
+        # Nothing to change: skip the re-encode round-trip and hand the
+        # engine the original file (WAV only — other formats are converted
+        # to WAV below for engine compatibility)
+        if not clean and not needs_resample and audio_path.suffix.lower() == ".wav":
+            return audio_path
+
+        if needs_resample:
             audio_data, sample_rate = self.audio_processor.resample_audio(
                 audio_data, sample_rate, target_sample_rate
             )
