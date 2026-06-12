@@ -129,6 +129,9 @@ class ChatterboxEngine(BaseTTSEngine):
             raise ValueError(
                 f"Unknown Chatterbox variant: {self.variant!r} (expected 'turbo' or 'standard')"
             )
+        # Turbo's prepare_conditionals asserts the prompt is strictly longer
+        # than 5 s; validate ourselves to fail fast with a clear message.
+        self.min_reference_seconds = 5.0 if self.variant == "turbo" else 0.0
         self._device = resolve_device(device or config.tts.device)
         self._model = None
 
@@ -168,6 +171,18 @@ class ChatterboxEngine(BaseTTSEngine):
                 f"Chatterbox ({self.variant}) only supports English ('en'), "
                 f"got language={language!r}. Use the XTTS engine for other languages."
             )
+
+        if self.min_reference_seconds:
+            import soundfile as sf
+
+            duration = sf.info(str(speaker_wav)).duration
+            if duration <= self.min_reference_seconds:
+                raise ValueError(
+                    f"Chatterbox {self.variant} requires a reference clip longer than "
+                    f"{self.min_reference_seconds:.0f} seconds, got {duration:.2f}s after "
+                    f"preparation (silence trimming can shorten clips). Upload a longer "
+                    f"sample or switch to CHATTERBOX_VARIANT=standard."
+                )
 
         temperature = temperature if temperature is not None else config.tts.temperature
         speed = speed if speed is not None else config.tts.speed

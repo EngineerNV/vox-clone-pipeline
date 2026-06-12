@@ -25,11 +25,22 @@ class FakeChatterboxModel:
         return torch.zeros(1, self.sr)  # 1 second of silence
 
 
+def _write_wav(path, seconds, sample_rate=24000):
+    import soundfile as sf
+
+    sf.write(str(path), np.zeros(int(seconds * sample_rate), dtype=np.float32), sample_rate)
+    return path
+
+
 @pytest.fixture
 def reference_wav(tmp_path):
-    path = tmp_path / "ref.wav"
-    path.write_bytes(b"fake")
-    return path
+    # Longer than 5s so it passes Chatterbox Turbo's minimum-duration check
+    return _write_wav(tmp_path / "ref.wav", seconds=6.0)
+
+
+@pytest.fixture
+def short_reference_wav(tmp_path):
+    return _write_wav(tmp_path / "short_ref.wav", seconds=3.0)
 
 
 class TestEngineFactory:
@@ -104,6 +115,23 @@ class TestChatterboxEngine:
         audio_fast, _ = engine.synthesize("Hi", speaker_wav=reference_wav, speed=2.0)
 
         assert len(audio_fast) < len(audio_normal)
+
+    def test_turbo_rejects_short_reference(self, short_reference_wav):
+        # Turbo's prepare_conditionals asserts > 5s; we must fail with a clear
+        # ValueError before the model loads instead of a raw AssertionError
+        engine = ChatterboxEngine(variant="turbo", device="cpu")
+        engine._model = FakeChatterboxModel()
+
+        with pytest.raises(ValueError, match="longer than 5 seconds"):
+            engine.synthesize("Hi", speaker_wav=short_reference_wav)
+
+    def test_standard_accepts_short_reference(self, short_reference_wav):
+        engine = ChatterboxEngine(variant="standard", device="cpu")
+        engine._model = FakeChatterboxModel()
+
+        audio, sample_rate = engine.synthesize("Hi", speaker_wav=short_reference_wav)
+
+        assert sample_rate == 24000
 
     def test_requires_speaker_wav(self):
         engine = ChatterboxEngine(variant="turbo", device="cpu")
