@@ -2,6 +2,14 @@
 
 A clean, modular Streamlit application for local zero-shot text-to-speech (TTS) voice cloning. Runs locally on Apple Silicon GPU (MPS), CUDA, or CPU, with a focus on code quality and maintainability.
 
+## Screenshots
+
+| Voice Cloning | Audio Cleaning |
+|---|---|
+| ![Voice cloning tab](docs/images/voice-cloning.png) | ![Audio cleaning tab](docs/images/audio-cleaning.png) |
+
+![Generated speech with engine settings](docs/images/generated-speech.png)
+
 ## Features
 
 - 🎯 **Zero-Shot Voice Cloning**: Clone any voice from a short audio sample
