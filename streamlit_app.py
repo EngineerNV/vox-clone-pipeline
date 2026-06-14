@@ -9,6 +9,9 @@ import streamlit as st
 
 from app import MainPage
 from core.config import config
+from core.logging_config import setup_logging
+
+setup_logging()
 
 DARK_THEME_CSS = """
 <style>

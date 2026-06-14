@@ -1,5 +1,6 @@
 """TTS orchestrator coordinating audio processing and TTS operations."""
 
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -8,6 +9,8 @@ from audio import AudioIOHandler, AudioProcessor
 from core.config import config
 from core.utils import sanitize_filename
 from tts import VoiceCloner, create_engine
+
+logger = logging.getLogger(__name__)
 
 
 class TTSOrchestrator:
@@ -45,6 +48,11 @@ class TTSOrchestrator:
         Raises:
             ValueError: If inputs are invalid
         """
+        logger.info(
+            "process_and_clone: reference=%s, clean_reference=%s, params=%s",
+            reference_audio_path, clean_reference, synthesis_params,
+        )
+
         # Generate cloned audio
         audio_data, sample_rate = self.voice_cloner.clone_voice(
             text=text,
@@ -61,6 +69,7 @@ class TTSOrchestrator:
 
         # Save at the engine's native rate; a mismatch here pitch-shifts the output
         self.audio_io.save_audio(audio_data, output_path, sample_rate)
+        logger.info("process_and_clone complete: %s", output_path)
 
         return output_path
 

@@ -1,10 +1,13 @@
 """Main page for the Streamlit application."""
 
+import logging
 
 import streamlit as st
 
 from app.ui_components import UIComponents
 from orchestration import TTSOrchestrator
+
+logger = logging.getLogger(__name__)
 
 
 @st.cache_resource
@@ -128,6 +131,7 @@ class MainPage:
 
                 except Exception as e:
                     loading_placeholder.empty()
+                    logger.exception("Speech generation failed")
                     st.error(f"Error generating speech: {str(e)}")
                     st.exception(e)
 
@@ -209,6 +213,7 @@ class MainPage:
 
                 except Exception as e:
                     loading_placeholder.empty()
+                    logger.exception("Audio cleaning failed")
                     st.error(f"Error cleaning audio: {str(e)}")
                     st.exception(e)
 

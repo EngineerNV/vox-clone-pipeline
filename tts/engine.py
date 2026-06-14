@@ -12,6 +12,7 @@ Two engines are supported:
 Select with the TTS_ENGINE environment variable ("chatterbox" or "xtts").
 """
 
+import logging
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -21,11 +22,18 @@ from typing import Optional
 # those ops instead of crashing. Must be set before the first MPS op runs.
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
+# Use the hf_transfer backend for model downloads: faster and resumes more
+# reliably than the default backend. Must be set before huggingface_hub
+# is imported (transitively, via chatterbox/coqui-tts below).
+os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+
 import numpy as np
 import torch
 
 from audio import AudioProcessor
 from core.config import config
+
+logger = logging.getLogger(__name__)
 
 
 def resolve_device(preference: str = "auto") -> str:
@@ -168,7 +176,9 @@ class ChatterboxEngine(BaseTTSEngine):
                     "chatterbox-tts is not installed. Install the default engine "
                     "dependencies with: pip install -r requirements.txt"
                 ) from e
+            logger.info("Loading Chatterbox (%s) on device=%s", self.variant, self._device)
             self._model = model_cls.from_pretrained(device=self._device)
+            logger.info("Chatterbox (%s) loaded", self.variant)
         return self._model
 
     def synthesize(
@@ -212,6 +222,10 @@ class ChatterboxEngine(BaseTTSEngine):
                 cfg_weight if cfg_weight is not None else config.tts.cfg_weight
             )
 
+        logger.info(
+            "Synthesizing %d chars with Chatterbox (%s): speed=%s, params=%s",
+            len(text), self.variant, speed, generate_kwargs,
+        )
         wav = self.model.generate(
             text,
             audio_prompt_path=str(speaker_wav),
@@ -220,6 +234,7 @@ class ChatterboxEngine(BaseTTSEngine):
 
         audio = wav.squeeze(0).detach().cpu().numpy().astype(np.float32)
         audio = AudioProcessor.change_speed(audio, speed)
+        logger.info("Synthesis complete: %.2fs of audio at %d Hz", len(audio) / self.model.sr, self.model.sr)
         return audio, self.model.sr
 
     @property
@@ -266,7 +281,9 @@ class XTTSEngine(BaseTTSEngine):
                     "virtualenv (its dependencies conflict with chatterbox-tts): "
                     "pip install -r requirements-xtts.txt"
                 ) from e
+            logger.info("Loading XTTS model %s on device=%s", self.model_name, self._device)
             self._model = TTS(model_name=self.model_name, progress_bar=True).to(self._device)
+            logger.info("XTTS model loaded")
         return self._model
 
     @property
@@ -287,6 +304,10 @@ class XTTSEngine(BaseTTSEngine):
         self._validate_inputs(text, speaker_wav)
         language, temperature, speed = self._resolve_defaults(language, temperature, speed)
 
+        logger.info(
+            "Synthesizing %d chars with XTTS: language=%s, temperature=%s, speed=%s",
+            len(text), language, temperature, speed,
+        )
         audio = self.model.tts(
             text=text,
             speaker_wav=str(speaker_wav),
@@ -298,7 +319,11 @@ class XTTSEngine(BaseTTSEngine):
         if isinstance(audio, torch.Tensor):
             audio = audio.cpu().numpy()
 
-        return np.array(audio, dtype=np.float32), self.output_sample_rate
+        audio = np.array(audio, dtype=np.float32)
+        logger.info(
+            "Synthesis complete: %.2fs of audio at %d Hz", len(audio) / self.output_sample_rate, self.output_sample_rate
+        )
+        return audio, self.output_sample_rate
 
     @property
     def display_name(self) -> str:
