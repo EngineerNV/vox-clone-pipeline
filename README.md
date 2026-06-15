@@ -1,6 +1,6 @@
 # 🎙️ Vox Clone Pipeline
 
-A clean, modular Streamlit application for local zero-shot text-to-speech (TTS) voice cloning. Runs locally on Apple Silicon GPU (MPS), CUDA, or CPU, with a focus on code quality and maintainability.
+A clean, modular Streamlit application for local zero-shot text-to-speech (TTS) voice cloning. Runs locally on Apple Silicon GPU (MPS), CUDA, or CPU, with a focus on code quality and maintainability. Made with both MacOS and Windows in mind.
 
 ## Screenshots
 
