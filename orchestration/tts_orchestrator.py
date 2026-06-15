@@ -1,5 +1,6 @@
 """TTS orchestrator coordinating audio processing and TTS operations."""
 
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -7,7 +8,9 @@ from typing import Optional
 from audio import AudioIOHandler, AudioProcessor
 from core.config import config
 from core.utils import sanitize_filename
-from tts import TTSEngine, VoiceCloner
+from tts import VoiceCloner, create_engine
+
+logger = logging.getLogger(__name__)
 
 
 class TTSOrchestrator:
@@ -15,7 +18,7 @@ class TTSOrchestrator:
 
     def __init__(self) -> None:
         """Initialize the TTS orchestrator with required components."""
-        self.tts_engine = TTSEngine()
+        self.tts_engine = create_engine()
         self.voice_cloner = VoiceCloner(self.tts_engine)
         self.audio_io = AudioIOHandler()
         self.audio_processor = AudioProcessor()
@@ -25,10 +28,8 @@ class TTSOrchestrator:
         text: str,
         reference_audio_path: Path,
         output_path: Optional[Path] = None,
-        language: Optional[str] = None,
-        temperature: Optional[float] = None,
-        speed: Optional[float] = None,
         clean_reference: bool = True,
+        **synthesis_params: object,
     ) -> Path:
         """
         Process reference audio and generate cloned speech.
@@ -37,10 +38,9 @@ class TTSOrchestrator:
             text: Text to synthesize
             reference_audio_path: Path to reference speaker audio
             output_path: Path to save output audio (auto-generated if not provided)
-            language: Language code
-            temperature: Sampling temperature
-            speed: Speech speed multiplier
             clean_reference: Whether to clean the reference audio
+            **synthesis_params: Engine synthesis parameters (language,
+                temperature, speed, exaggeration, cfg_weight, ...)
 
         Returns:
             Path to the generated audio file
@@ -48,14 +48,17 @@ class TTSOrchestrator:
         Raises:
             ValueError: If inputs are invalid
         """
+        logger.info(
+            "process_and_clone: reference=%s, clean_reference=%s, params=%s",
+            reference_audio_path, clean_reference, synthesis_params,
+        )
+
         # Generate cloned audio
-        audio_data = self.voice_cloner.clone_voice(
+        audio_data, sample_rate = self.voice_cloner.clone_voice(
             text=text,
             reference_audio=reference_audio_path,
-            language=language,
-            temperature=temperature,
-            speed=speed,
             clean_reference=clean_reference,
+            **synthesis_params,
         )
 
         # Generate output path if not provided
@@ -64,8 +67,9 @@ class TTSOrchestrator:
             filename = f"tts_output_{timestamp}.wav"
             output_path = config.app.output_dir / filename
 
-        # Save the generated audio
-        self.audio_io.save_audio(audio_data, output_path)
+        # Save at the engine's native rate; a mismatch here pitch-shifts the output
+        self.audio_io.save_audio(audio_data, output_path, sample_rate)
+        logger.info("process_and_clone complete: %s", output_path)
 
         return output_path
 

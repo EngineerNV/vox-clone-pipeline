@@ -1,10 +1,20 @@
 """Main page for the Streamlit application."""
 
+import logging
 
 import streamlit as st
 
 from app.ui_components import UIComponents
 from orchestration import TTSOrchestrator
+
+logger = logging.getLogger(__name__)
+
+
+@st.cache_resource
+def _get_orchestrator() -> TTSOrchestrator:
+    """Build the orchestrator once per process so the loaded TTS model
+    survives Streamlit reruns instead of being reloaded on every interaction."""
+    return TTSOrchestrator()
 
 
 class MainPage:
@@ -13,7 +23,7 @@ class MainPage:
     def __init__(self) -> None:
         """Initialize the main page."""
         self.ui = UIComponents()
-        self.orchestrator = TTSOrchestrator()
+        self.orchestrator = _get_orchestrator()
 
     def render(self) -> None:
         """Render the main page."""
@@ -70,7 +80,7 @@ class MainPage:
 
             # Settings
             st.subheader("3. Configure Settings")
-            settings = self.ui.render_tts_settings()
+            settings = self.ui.render_tts_settings(self.orchestrator.tts_engine)
 
             st.divider()
 
@@ -98,10 +108,8 @@ class MainPage:
                     output_path = self.orchestrator.process_and_clone(
                         text=text,
                         reference_audio_path=reference_audio,
-                        language=settings["language"],
-                        temperature=settings["temperature"],
-                        speed=settings["speed"],
                         clean_reference=False,
+                        **settings,
                     )
                     
                     # Clear loading animation
@@ -123,6 +131,7 @@ class MainPage:
 
                 except Exception as e:
                     loading_placeholder.empty()
+                    logger.exception("Speech generation failed")
                     st.error(f"Error generating speech: {str(e)}")
                     st.exception(e)
 
@@ -204,6 +213,7 @@ class MainPage:
 
                 except Exception as e:
                     loading_placeholder.empty()
+                    logger.exception("Audio cleaning failed")
                     st.error(f"Error cleaning audio: {str(e)}")
                     st.exception(e)
 

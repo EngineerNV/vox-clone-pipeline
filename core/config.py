@@ -21,13 +21,15 @@ class AudioConfig:
 class TTSConfig:
     """Configuration for TTS model."""
 
-    model_name: str = "tts_models/multilingual/multi-dataset/xtts_v2"
+    engine: str = "chatterbox"  # "chatterbox" (default) or "xtts" (legacy)
+    chatterbox_variant: str = "turbo"  # "turbo" (~2-3 GB) or "standard" (~4-5 GB)
+    model_name: str = "tts_models/multilingual/multi-dataset/xtts_v2"  # XTTS engine only
     language: str = "en"
     temperature: float = 0.75
-    top_k: int = 50
-    top_p: float = 0.85
     speed: float = 1.0
-    use_cpu: bool = True  # macOS CPU-only
+    exaggeration: float = 0.5  # Chatterbox standard variant only
+    cfg_weight: float = 0.5  # Chatterbox standard variant only
+    device: str = "auto"  # "auto" picks cuda > mps (Apple Silicon GPU) > cpu
 
 
 @dataclass
@@ -64,6 +66,15 @@ class Config:
         # Override from environment variables if present
         if sample_rate := os.getenv("AUDIO_SAMPLE_RATE"):
             config.audio.sample_rate = int(sample_rate)
+
+        if engine := os.getenv("TTS_ENGINE"):
+            config.tts.engine = engine
+
+        if variant := os.getenv("CHATTERBOX_VARIANT"):
+            config.tts.chatterbox_variant = variant
+
+        if device := os.getenv("TTS_DEVICE"):
+            config.tts.device = device
 
         if model_name := os.getenv("TTS_MODEL_NAME"):
             config.tts.model_name = model_name

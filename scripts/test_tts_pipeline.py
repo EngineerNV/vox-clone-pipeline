@@ -17,6 +17,7 @@ Usage:
 """
 
 import argparse
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -41,11 +42,17 @@ def test_imports() -> bool:
         ("soundfile", "soundfile"),
         ("scipy", "scipy"),
         ("noisereduce", "noisereduce"),
-        ("TTS.api", "TTS (coqui-tts)"),
         ("transformers", "transformers"),
         ("streamlit", "streamlit"),
     ]
-    
+
+    # Only the configured engine's package needs to be importable
+    engine = os.getenv("TTS_ENGINE", "chatterbox")
+    if engine == "xtts":
+        modules.append(("TTS.api", "TTS (coqui-tts)"))
+    else:
+        modules.append(("chatterbox.tts_turbo", "chatterbox-tts"))
+
     all_passed = True
     for module_path, display_name in modules:
         try:
@@ -54,7 +61,7 @@ def test_imports() -> bool:
         except ImportError as e:
             print_status(f"{display_name} import failed: {e}", success=False)
             all_passed = False
-    
+
     return all_passed
 
 
@@ -194,16 +201,16 @@ def test_tts_engine_init() -> bool:
     print("\n=== Testing TTS Engine Initialization ===")
     
     try:
-        from tts.engine import TTSEngine
-        
+        from tts.engine import create_engine
+
         # Just test that we can create the engine object
-        engine = TTSEngine(use_cpu=True)
-        print_status(f"TTSEngine created with model: {engine.model_name}")
+        engine = create_engine()
+        print_status(f"Engine created: {type(engine).__name__}")
         print_status(f"Device: {engine._device}")
-        
+
         # Don't load the model (it's ~2GB)
         print_status("Model loading deferred (use --full to test synthesis)")
-        
+
         return True
     except Exception as e:
         print_status(f"TTS engine init failed: {e}", success=False)
@@ -215,7 +222,7 @@ def test_tts_engine_init() -> bool:
 def test_full_synthesis(test_audio_path: Path) -> bool:
     """Test full TTS synthesis (requires model download)."""
     print("\n=== Testing Full TTS Synthesis ===")
-    print("⚠️  This will download the XTTS v2 model (~2GB) on first run...")
+    print("⚠️  This will download the TTS model (~2GB) on first run...")
     
     try:
         from orchestration.tts_orchestrator import TTSOrchestrator

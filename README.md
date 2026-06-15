@@ -1,13 +1,21 @@
 # 🎙️ Vox Clone Pipeline
 
-A clean, modular Streamlit application for local zero-shot text-to-speech (TTS) voice cloning. Optimized for macOS CPU-only execution with a focus on code quality and maintainability.
+A clean, modular Streamlit application for local zero-shot text-to-speech (TTS) voice cloning. Runs locally on Apple Silicon GPU (MPS), CUDA, or CPU, with a focus on code quality and maintainability.
+
+## Screenshots
+
+| Voice Cloning | Audio Cleaning |
+|---|---|
+| ![Voice cloning tab](docs/images/voice-cloning.png) | ![Audio cleaning tab](docs/images/audio-cleaning.png) |
+
+![Generated speech with engine settings](docs/images/generated-speech.png)
 
 ## Features
 
 - 🎯 **Zero-Shot Voice Cloning**: Clone any voice from a short audio sample
 - 🧹 **Audio Cleaning**: Noise reduction, normalization, and silence trimming
 - 🎵 **Text-to-Speech**: Generate natural-sounding speech in multiple languages
-- 💻 **CPU-Only**: Runs on macOS without GPU requirements
+- 💻 **Runs Locally**: Uses the Apple Silicon GPU automatically; no dedicated GPU required
 - 🏗️ **Clean Architecture**: Modular OOP design with separation of concerns
 - 🎨 **User-Friendly UI**: Intuitive Streamlit interface
 
@@ -47,9 +55,10 @@ vox-clone-pipeline/
 
 ### Prerequisites
 
-- Python 3.9-3.12
+- Python 3.10-3.12
 - macOS (optimized for, but should work on other platforms)
 - ~2GB disk space for TTS models
+- 8 GB RAM minimum (Chatterbox Turbo); 16 GB+ recommended for the standard variant
 
 ### Setup
 
@@ -71,7 +80,7 @@ vox-clone-pipeline/
    ```
 
 4. **Download TTS models** (automatic on first run):
-   The XTTS v2 model (~2GB) will be downloaded automatically when you first run the app.
+   The Chatterbox Turbo model (~2GB) will be downloaded automatically when you first run the app.
 
 ## Usage
 
@@ -108,9 +117,20 @@ AUDIO_SAMPLE_RATE=22050      # Sample rate for processing
 AUDIO_MAX_DURATION=30         # Maximum audio duration (seconds)
 
 # TTS settings
-TTS_MODEL_NAME=tts_models/multilingual/multi-dataset/xtts_v2
+TTS_ENGINE=chatterbox        # "chatterbox" (default) or "xtts" (legacy, separate venv)
+CHATTERBOX_VARIANT=turbo     # "turbo" (~2-3 GB) or "standard" (~4-5 GB)
+TTS_DEVICE=auto              # "auto" picks cuda > mps (Apple Silicon GPU) > cpu
+TTS_MODEL_NAME=tts_models/multilingual/multi-dataset/xtts_v2  # XTTS engine only
 TTS_LANGUAGE=en              # Default language
 ```
+
+### Apple Silicon GPU (MPS)
+
+On M-series Macs the app uses the GPU automatically via PyTorch's MPS
+backend (`TTS_DEVICE=auto`). Apple Silicon has unified memory — the GPU
+shares system RAM, so there is no separate VRAM to configure. Chatterbox
+Turbo peaks at ~2-3 GB; the standard variant at ~4-5 GB. If you hit an
+MPS-related error, set `TTS_DEVICE=cpu` as a fallback.
 
 ## Development
 
@@ -162,14 +182,22 @@ mypy .
 - WAV, MP3, FLAC, OGG, M4A
 
 ### Languages
-English, Spanish, French, German, Italian, Portuguese, Polish, Turkish, Russian, Dutch, Czech, Arabic, Chinese (Simplified)
+- **Chatterbox** (default engine): English
+- **XTTS v2** (legacy engine): English, Spanish, French, German, Italian, Portuguese, Polish, Turkish, Russian, Dutch, Czech, Arabic, Chinese (Simplified)
 
-### TTS Model
-- **Coqui XTTS v2**: State-of-the-art multilingual zero-shot voice cloning
+### TTS Models
+- **Chatterbox (Resemble AI)** — default: MIT-licensed zero-shot voice cloning with
+  strong accent preservation. Two variants: `turbo` (350M params, fast, lean) and
+  `standard` (~0.5B params, adds exaggeration/CFG expressiveness controls). Outputs
+  carry a PerTh audio watermark.
+- **Coqui XTTS v2** — legacy: multilingual zero-shot voice cloning. Known to drift
+  toward a British/RP accent with short or heavily-processed reference clips. Its
+  dependency stack conflicts with Chatterbox, so it lives in its own virtualenv
+  (`requirements-xtts.txt`).
 
 ## Performance
 
-- **CPU-Only**: No GPU required (optimized for M1/M2 Macs)
+- **Local Inference**: Apple Silicon GPU (MPS) used automatically; CPU fallback available
 - **Generation Time**: ~10-30 seconds for short text on modern hardware
 - **Memory Usage**: ~2-4GB RAM during generation
 
@@ -179,7 +207,7 @@ English, Spanish, French, German, Italian, Portuguese, Polish, Turkish, Russian,
 
 **"Model not found" error**:
 - Ensure you have an active internet connection on first run
-- The XTTS v2 model (~2GB) will be downloaded automatically
+- The Chatterbox model (~2GB) will be downloaded automatically
 
 **"Audio duration invalid" warning**:
 - Reference audio should be 0.5-30 seconds
@@ -191,7 +219,7 @@ English, Spanish, French, German, Italian, Portuguese, Polish, Turkish, Russian,
 
 **Import errors**:
 - Ensure all dependencies are installed: `pip install -r requirements.txt`
-- Check Python version compatibility (3.9-3.12)
+- Check Python version compatibility (3.10-3.12)
 
 ## Contributing
 
@@ -209,7 +237,8 @@ MIT License - see LICENSE file for details
 
 ## Acknowledgments
 
-- [Coqui TTS](https://github.com/coqui-ai/TTS) - TTS models and engine
+- [Chatterbox (Resemble AI)](https://github.com/resemble-ai/chatterbox) - Default TTS engine
+- [Coqui TTS](https://github.com/coqui-ai/TTS) - Legacy XTTS engine
 - [Streamlit](https://streamlit.io/) - Web application framework
 - Community contributors and testers
 
@@ -221,4 +250,4 @@ For issues, questions, or suggestions:
 
 ---
 
-**Note**: This is a local, CPU-only application. No data is sent to external servers. All processing happens on your machine.
+**Note**: This is a fully local application. No data is sent to external servers. All processing happens on your machine.

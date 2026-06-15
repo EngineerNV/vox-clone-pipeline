@@ -1,12 +1,15 @@
 """UI components for the Streamlit application."""
 
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import streamlit as st
 
 from core.config import config
 from core.utils import format_duration
+
+if TYPE_CHECKING:
+    from tts.engine import BaseTTSEngine
 
 
 class UIComponents:
@@ -149,23 +152,32 @@ class UIComponents:
         )
 
     @staticmethod
-    def render_tts_settings() -> dict[str, any]:
+    def render_tts_settings(engine: "BaseTTSEngine") -> dict[str, str | float]:
         """
-        Render TTS settings controls.
+        Render TTS settings controls for the given engine's capabilities.
+
+        Args:
+            engine: The active TTS engine (drives which controls appear)
 
         Returns:
-            Dictionary of TTS settings
+            Dictionary of TTS settings to pass through to synthesis
         """
+        languages = engine.get_available_languages()
+
         with st.expander("⚙️ Advanced Settings", expanded=False):
             col1, col2 = st.columns(2)
 
             with col1:
-                language = st.selectbox(
-                    "Language",
-                    options=["en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn"],
-                    index=0,
-                    help="Select the language for speech synthesis",
-                )
+                if len(languages) == 1:
+                    language = languages[0]
+                    st.caption(f"Engine: {engine.display_name} — English only")
+                else:
+                    language = st.selectbox(
+                        "Language",
+                        options=languages,
+                        index=0,
+                        help="Select the language for speech synthesis",
+                    )
 
                 temperature = st.slider(
                     "Temperature",
@@ -186,11 +198,34 @@ class UIComponents:
                     help="Speech speed multiplier",
                 )
 
-        return {
-            "language": language,
-            "temperature": temperature,
-            "speed": speed,
-        }
+            settings: dict[str, str | float] = {
+                "language": language,
+                "temperature": temperature,
+                "speed": speed,
+            }
+
+            if engine.supports_expressiveness:
+                col3, col4 = st.columns(2)
+                with col3:
+                    settings["exaggeration"] = st.slider(
+                        "Exaggeration",
+                        min_value=0.0,
+                        max_value=1.0,
+                        value=config.tts.exaggeration,
+                        step=0.05,
+                        help="Emotion intensity. 0.5 is neutral; higher is more dramatic",
+                    )
+                with col4:
+                    settings["cfg_weight"] = st.slider(
+                        "CFG Weight",
+                        min_value=0.0,
+                        max_value=1.0,
+                        value=config.tts.cfg_weight,
+                        step=0.05,
+                        help="Adherence to the reference voice. Lower values slow down pacing",
+                    )
+
+        return settings
 
     @staticmethod
     def render_audio_cleaning_settings() -> dict[str, bool]:

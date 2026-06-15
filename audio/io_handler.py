@@ -1,20 +1,28 @@
 """Audio I/O operations for loading and saving audio files."""
 
+import logging
 import shutil
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import soundfile as sf
+import static_ffmpeg
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
 
 from core.config import config
 
+logger = logging.getLogger(__name__)
+
+# Add the ffmpeg/ffprobe binaries bundled by static-ffmpeg to PATH so MP3/OGG/M4A
+# loading works (pydub needs ffmpeg to decode and ffprobe to read metadata).
+static_ffmpeg.add_paths()
+
 
 def _check_ffmpeg_available() -> bool:
-    """Check if ffmpeg is available in PATH."""
-    return shutil.which("ffmpeg") is not None
+    """Check if ffmpeg and ffprobe are available in PATH."""
+    return shutil.which("ffmpeg") is not None and shutil.which("ffprobe") is not None
 
 
 class AudioIOHandler:
@@ -35,6 +43,8 @@ class AudioIOHandler:
             ValueError: If the file format is not supported
             FileNotFoundError: If the file does not exist
         """
+        logger.info("Loading audio: %s", file_path)
+
         if not file_path.exists():
             raise FileNotFoundError(f"Audio file not found: {file_path}")
 
@@ -50,8 +60,7 @@ class AudioIOHandler:
             if not _check_ffmpeg_available():
                 raise RuntimeError(
                     f"ffmpeg is required to load {suffix} files. "
-                    "Install it with: brew install ffmpeg (macOS) or "
-                    "apt install ffmpeg (Linux)"
+                    "Install it with: pip install static-ffmpeg"
                 )
             try:
                 audio_segment = AudioSegment.from_file(str(file_path))
@@ -74,6 +83,10 @@ class AudioIOHandler:
         if len(audio_data.shape) > 1:
             audio_data = np.mean(audio_data, axis=1)
 
+        logger.info(
+            "Loaded audio: %.2fs at %d Hz (%s)",
+            len(audio_data) / sample_rate, sample_rate, file_path.name,
+        )
         return audio_data, sample_rate
 
     @staticmethod
@@ -98,6 +111,10 @@ class AudioIOHandler:
 
         # Save using soundfile
         sf.write(str(file_path), audio_data, sample_rate)
+        logger.info(
+            "Saved audio: %.2fs at %d Hz -> %s",
+            len(audio_data) / sample_rate, sample_rate, file_path,
+        )
 
     @staticmethod
     def get_audio_duration(audio_data: np.ndarray, sample_rate: int) -> float:

@@ -6,7 +6,7 @@ authors = [
     {name = "EngineerNV"}
 ]
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10,<3.13"  # chatterbox-tts needs >=3.10
 license = {text = "MIT"}
 
 [project.urls]
@@ -35,7 +35,7 @@ ignore = [
 known-first-party = ["audio", "tts", "services", "app", "core"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
